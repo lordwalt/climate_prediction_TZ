@@ -271,10 +271,12 @@ try:
         Line2D([0], [0], color='red', linestyle='--', linewidth=1.5, label=f'Trend: {z[0]:.4f}°C/year')
     ]
     
-    # Position legend in the lower right to avoid overlapping with data
-    ax.legend(handles=legend_elements, loc='lower right', fontsize=9)
+    # Position legend outside the plot area at the bottom
+    ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.35), fontsize=9, ncol=3)
     
     plt.tight_layout()
+    plt.subplots_adjust(bottom=0.25)  # Adjust bottom margin to make room for the legend
+    
     st.pyplot(fig)
 
     
