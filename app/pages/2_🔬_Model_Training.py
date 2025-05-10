@@ -321,6 +321,8 @@ with error_tabs[0]:
         bins=25,  # Reduced number of bins for smaller plot
         alpha=0.7,
         color='#1f77b4',
+        edgecolor='black',
+        linewidth=0.5,
         label='Random Forest'
     )
     
@@ -336,6 +338,8 @@ with error_tabs[0]:
         bins=25,  # Reduced number of bins for smaller plot
         alpha=0.7,
         color='#ff7f0e',
+        edgecolor='black',
+        linewidth=0.5,
         label='Ridge Regression'
     )
     

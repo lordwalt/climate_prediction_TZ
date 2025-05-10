@@ -77,16 +77,16 @@ try:
     fig, axes = plt.subplots(1, 3, figsize=(7, 4))
     
     # Add histograms for each temperature type
-    axes[0].hist(df['TAVG'], bins=25, alpha=0.7, color='#49a0b5')
+    axes[0].hist(df['TAVG'], bins=25, alpha=0.7, color='#49a0b5', edgecolor='black', linewidth=0.5)
     axes[0].set_title("Average Temperature", fontsize=11)
     axes[0].set_xlabel("Temperature (°C)", fontsize=10)
     axes[0].set_ylabel("Frequency", fontsize=10)
     
-    axes[1].hist(df['TMAX'], bins=25, alpha=0.7, color='#ff6d00')
+    axes[1].hist(df['TMAX'], bins=25, alpha=0.7, color='#ff6d00', edgecolor='black', linewidth=0.5)
     axes[1].set_title("Maximum Temperature", fontsize=11)
     axes[1].set_xlabel("Temperature (°C)", fontsize=10)
     
-    axes[2].hist(df['TMIN'], bins=25, alpha=0.7, color='#32ab60')
+    axes[2].hist(df['TMIN'], bins=25, alpha=0.7, color='#32ab60', edgecolor='black', linewidth=0.5)
     axes[2].set_title("Minimum Temperature", fontsize=11)
     axes[2].set_xlabel("Temperature (°C)", fontsize=10)
     
