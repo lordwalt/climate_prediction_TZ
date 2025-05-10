@@ -191,7 +191,7 @@ try:
     
     Long-term temperature trends are key indicators of climate change. Tanzania, like many regions, 
     has experienced gradual warming over recent decades, which impacts agriculture, water resources, 
-    and biodiversity.
+    and biodiversity. An understanding of these trends is crucial for future decision-making and adaptation.
     """)
     
     # Enhanced yearly trend visualization
@@ -274,7 +274,7 @@ try:
     ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.35), fontsize=9, ncol=3)
     
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.25)  # Adjust bottom margin to make room for the legend
+    plt.subplots_adjust(bottom=0.24)  # Adjust bottom margin to make room for the legend 
     
     st.pyplot(fig)
 
