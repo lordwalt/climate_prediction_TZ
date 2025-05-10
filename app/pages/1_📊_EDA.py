@@ -271,7 +271,6 @@ try:
         Line2D([0], [0], color='red', linestyle='--', linewidth=1.5, label=f'Trend: {z[0]:.4f}°C/year')
     ]
     
-    # Position legend outside the plot area at the bottom
     ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.35), fontsize=9, ncol=3)
     
     plt.tight_layout()
