@@ -1,13 +1,18 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import plotly.express as px
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, r2_score
+
+# Set matplotlib style
+plt.style.use('seaborn-v0_8-whitegrid')
+
+# Set base font size for better readability on smaller plots
+plt.rcParams.update({'font.size': 10})
 
 st.title("Model Training")
 
@@ -47,50 +52,63 @@ with metric_tabs[0]:
     
     st.dataframe(comparison_df, use_container_width=True, hide_index=True)
     
-    # Visual comparison of metrics using Plotly
-    fig = make_subplots(rows=1, cols=2, subplot_titles=("Mean Absolute Error (lower is better)", "R² Score (higher is better)"))
+    # Visual comparison of metrics using Matplotlib
+    fig, axes = plt.subplots(1, 2, figsize=(7, 4))
     
     # MAE comparison (lower is better)
     models = ['Random Forest', 'Ridge Regression']
     mae_values = [0.89, 0.91]
     
-    fig.add_trace(
-        go.Bar(
-            x=models, 
-            y=mae_values, 
-            text=[f"{v:.2f}°C" for v in mae_values],
-            textposition='outside',
-            marker_color=['#1f77b4', '#ff7f0e']
-        ),
-        row=1, col=1
+    # Plot MAE
+    bars1 = axes[0].bar(
+        models, 
+        mae_values, 
+        color=['#1f77b4', '#ff7f0e']
     )
+    
+    # Add text labels
+    for bar in bars1:
+        height = bar.get_height()
+        axes[0].text(
+            bar.get_x() + bar.get_width()/2.,
+            height + 0.02,
+            f"{height:.2f}°C",
+            ha='center', 
+            va='bottom',
+            fontsize=9
+        )
+    
+    axes[0].set_title("Mean Absolute Error (lower is better)", fontsize=11)
+    axes[0].set_ylabel("MAE (°C)", fontsize=10)
     
     # R² comparison (higher is better)
     r2_values = [0.72, 0.72]
     
-    fig.add_trace(
-        go.Bar(
-            x=models, 
-            y=r2_values, 
-            text=[f"{v:.2f}" for v in r2_values],
-            textposition='outside',
-            marker_color=['#1f77b4', '#ff7f0e']
-        ),
-        row=1, col=2
+    # Plot R²
+    bars2 = axes[1].bar(
+        models, 
+        r2_values, 
+        color=['#1f77b4', '#ff7f0e']
     )
     
-    # Update layout
-    fig.update_layout(
-        height=500,
-        showlegend=False,
-        template="plotly_white"
-    )
+    # Add text labels
+    for bar in bars2:
+        height = bar.get_height()
+        axes[1].text(
+            bar.get_x() + bar.get_width()/2.,
+            height + 0.02,
+            f"{height:.2f}",
+            ha='center', 
+            va='bottom',
+            fontsize=9
+        )
     
-    # Update y-axis for R² plot to start at 0 and end at 1
-    fig.update_yaxes(title_text="MAE (°C)", row=1, col=1)
-    fig.update_yaxes(title_text="R² Score", range=[0, 1.0], row=1, col=2)
+    axes[1].set_title("R² Score (higher is better)", fontsize=11)
+    axes[1].set_ylabel("R² Score", fontsize=10)
+    axes[1].set_ylim(0, 1.0)
     
-    st.plotly_chart(fig, use_container_width=True)
+    plt.tight_layout()
+    st.pyplot(fig)
     
     st.markdown("""
     **Insights:**
@@ -121,53 +139,72 @@ with metric_tabs[1]:
     
     st.dataframe(cv_results, use_container_width=True, hide_index=True)
     
-    # Visualize cross-validation results with Plotly
-    fig = go.Figure()
+    # Visualize cross-validation results with Matplotlib
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     x = list(range(1, 6))
+    x_labels = [f"Fold {i}" for i in x]
     rf_mae = cv_results['RF MAE (°C)'][:5].astype(float)
     ridge_mae = cv_results['Ridge MAE (°C)'][:5].astype(float)
     
-    # Add traces for Random Forest
-    fig.add_trace(go.Bar(
-        x=[f"Fold {i}" for i in x],
-        y=rf_mae,
-        name='Random Forest',
-        text=[f"{v:.2f}" for v in rf_mae],
-        textposition='outside',
-        marker_color='#1f77b4',
-        width=0.4,
-        offset=-0.2
-    ))
+    # Set width of bars
+    bar_width = 0.35
     
-    # Add traces for Ridge Regression
-    fig.add_trace(go.Bar(
-        x=[f"Fold {i}" for i in x],
-        y=ridge_mae,
-        name='Ridge Regression',
-        text=[f"{v:.2f}" for v in ridge_mae],
-        textposition='outside',
-        marker_color='#ff7f0e',
-        width=0.4,
-        offset=0.2
-    ))
+    # Set position of bars on x axis
+    r1 = np.arange(len(x))
+    r2 = [x + bar_width for x in r1]
     
-    # Update layout
-    fig.update_layout(
-        title='MAE Across Cross-Validation Folds',
-        xaxis_title='Cross-Validation Fold',
-        yaxis_title='MAE (°C)',
-        template='plotly_white',
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
+    # Add bars for Random Forest
+    bars1 = ax.bar(
+        r1, 
+        rf_mae, 
+        width=bar_width, 
+        color='#1f77b4', 
+        label='Random Forest'
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Add bars for Ridge Regression
+    bars2 = ax.bar(
+        r2, 
+        ridge_mae, 
+        width=bar_width, 
+        color='#ff7f0e', 
+        label='Ridge Regression'
+    )
+    
+    # Add text labels
+    for bar in bars1:
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width()/2.,
+            height + 0.01,
+            f"{height:.2f}",
+            ha='center', 
+            va='bottom',
+            fontsize=8
+        )
+    
+    for bar in bars2:
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width()/2.,
+            height + 0.01,
+            f"{height:.2f}",
+            ha='center', 
+            va='bottom',
+            fontsize=8
+        )
+    
+    # Add labels and title
+    ax.set_title('MAE Across Cross-Validation Folds', fontsize=12)
+    ax.set_xlabel('Cross-Validation Fold', fontsize=10)
+    ax.set_ylabel('MAE (°C)', fontsize=10)
+    ax.set_xticks([r + bar_width/2 for r in range(len(x))])
+    ax.set_xticklabels(x_labels)
+    ax.legend(fontsize=9, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+    
+    plt.tight_layout(pad=2.0)
+    st.pyplot(fig)
     
     st.markdown("""
     **Insights from Cross-Validation:**
@@ -196,48 +233,46 @@ with metric_tabs[2]:
     ridge_train_scores = [0.85, 0.83, 0.82, 0.81, 0.80, 0.79, 0.78, 0.77, 0.76, 0.75]
     ridge_test_scores = [0.60, 0.64, 0.66, 0.68, 0.69, 0.70, 0.71, 0.71, 0.72, 0.72]
     
-    # Use Matplotlib for learning curves
-    import matplotlib.pyplot as plt
     
     # Create figure with two subplots
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(7, 4))
     
     # Random Forest learning curve
-    axes[0].plot(train_sizes_pct, rf_train_scores, 'o-', color='#1f77b4', linewidth=2, markersize=8, label='Training Score')
-    axes[0].plot(train_sizes_pct, rf_test_scores, 'o--', color='#ff7f0e', linewidth=2, markersize=8, label='Validation Score')
+    axes[0].plot(train_sizes_pct, rf_train_scores, 'o-', color='#1f77b4', linewidth=2, markersize=6, label='Training Score')
+    axes[0].plot(train_sizes_pct, rf_test_scores, 'o--', color='#ff7f0e', linewidth=2, markersize=6, label='Validation Score')
     axes[0].fill_between(train_sizes_pct, rf_train_scores, rf_test_scores, alpha=0.2, color='#1f77b4')
-    axes[0].set_title('Random Forest Learning Curve', fontsize=16, fontweight='bold')
-    axes[0].set_xlabel('Training Data Percentage (%)', fontsize=14)
-    axes[0].set_ylabel('R² Score', fontsize=14)
+    axes[0].set_title('Random Forest Learning Curve', fontsize=12)
+    axes[0].set_xlabel('Training Data Percentage (%)', fontsize=10)
+    axes[0].set_ylabel('R² Score', fontsize=10)
     axes[0].set_ylim(0.5, 1.0)
     axes[0].grid(True, linestyle='--', alpha=0.7)
-    axes[0].legend(loc='upper left', fontsize=12)
+    axes[0].legend(loc='upper left', fontsize=8)
     
     # Add annotation for overfitting gap
     axes[0].annotate('Overfitting\ngap', xy=(30, 0.9), xytext=(50, 0.85),
                     arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8),
-                    fontsize=12)
+                    fontsize=8)
     
     # Add annotation for performance plateau
     axes[0].annotate('Performance\nplateau', xy=(90, 0.72), xytext=(60, 0.65),
                     arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8),
-                    fontsize=12)
+                    fontsize=8)
     
     # Ridge Regression learning curve
-    axes[1].plot(train_sizes_pct, ridge_train_scores, 'o-', color='#2ca02c', linewidth=2, markersize=8, label='Training Score')
-    axes[1].plot(train_sizes_pct, ridge_test_scores, 'o--', color='#d62728', linewidth=2, markersize=8, label='Validation Score')
+    axes[1].plot(train_sizes_pct, ridge_train_scores, 'o-', color='#2ca02c', linewidth=2, markersize=6, label='Training Score')
+    axes[1].plot(train_sizes_pct, ridge_test_scores, 'o--', color='#d62728', linewidth=2, markersize=6, label='Validation Score')
     axes[1].fill_between(train_sizes_pct, ridge_train_scores, ridge_test_scores, alpha=0.2, color='#2ca02c')
-    axes[1].set_title('Ridge Regression Learning Curve', fontsize=16, fontweight='bold')
-    axes[1].set_xlabel('Training Data Percentage (%)', fontsize=14)
-    axes[1].set_ylabel('R² Score', fontsize=14)
+    axes[1].set_title('Ridge Regression Learning Curve', fontsize=12)
+    axes[1].set_xlabel('Training Data Percentage (%)', fontsize=10)
+    axes[1].set_ylabel('R² Score', fontsize=10)
     axes[1].set_ylim(0.5, 1.0)
     axes[1].grid(True, linestyle='--', alpha=0.7)
-    axes[1].legend(loc='upper left', fontsize=12)
+    axes[1].legend(loc='upper left', fontsize=8)
     
     # Add annotation for less overfitting
     axes[1].annotate('Less\noverfitting', xy=(50, 0.78), xytext=(70, 0.85),
                     arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8),
-                    fontsize=12)
+                    fontsize=8)
     
     plt.tight_layout()
     st.pyplot(fig)
@@ -277,60 +312,41 @@ with error_tabs[0]:
     rf_errors = np.random.normal(0, 0.9, 1000)
     ridge_errors = np.random.normal(0, 0.95, 1000)
     
-    # Create Plotly subplot
-    fig = make_subplots(rows=1, cols=2, 
-                        subplot_titles=("Random Forest Error Distribution", "Ridge Regression Error Distribution"))
+    # Create Matplotlib subplot
+    fig, axes = plt.subplots(1, 2, figsize=(7, 4))
     
     # Random Forest error distribution
-    fig.add_trace(
-        go.Histogram(
-            x=rf_errors,
-            nbinsx=30,
-            opacity=0.7,
-            marker_color='#1f77b4',
-            name='Random Forest'
-        ),
-        row=1, col=1
+    axes[0].hist(
+        rf_errors,
+        bins=25,  # Reduced number of bins for smaller plot
+        alpha=0.7,
+        color='#1f77b4',
+        label='Random Forest'
     )
     
     # Add vertical line at x=0
-    fig.add_vline(x=0, line_width=2, line_dash="dash", line_color="red", row=1, col=1)
+    axes[0].axvline(x=0, linestyle='--', color='red', linewidth=1.5)
+    axes[0].set_title("Random Forest Error Distribution", fontsize=11)
+    axes[0].set_xlabel("Prediction Error (°C)", fontsize=10)
+    axes[0].set_ylabel("Frequency", fontsize=10)
     
     # Ridge Regression error distribution
-    fig.add_trace(
-        go.Histogram(
-            x=ridge_errors,
-            nbinsx=30,
-            opacity=0.7,
-            marker_color='#ff7f0e',
-            name='Ridge Regression'
-        ),
-        row=1, col=2
+    axes[1].hist(
+        ridge_errors,
+        bins=25,  # Reduced number of bins for smaller plot
+        alpha=0.7,
+        color='#ff7f0e',
+        label='Ridge Regression'
     )
     
     # Add vertical line at x=0
-    fig.add_vline(x=0, line_width=2, line_dash="dash", line_color="red", row=1, col=2)
+    axes[1].axvline(x=0, linestyle='--', color='red', linewidth=1.5)
+    axes[1].set_title("Ridge Regression Error Distribution", fontsize=11)
+    axes[1].set_xlabel("Prediction Error (°C)", fontsize=10)
+    axes[1].set_ylabel("Frequency", fontsize=10)
     
-    # Update layout
-    fig.update_layout(
-        height=500,
-        template="plotly_white",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
-    )
-    
-    # Update axes
-    fig.update_xaxes(title_text="Prediction Error (°C)", row=1, col=1)
-    fig.update_xaxes(title_text="Prediction Error (°C)", row=1, col=2)
-    fig.update_yaxes(title_text="Frequency", row=1, col=1)
-    fig.update_yaxes(title_text="Frequency", row=1, col=2)
-    
-    st.plotly_chart(fig, use_container_width=True)
+    plt.tight_layout()
+    st.pyplot(fig)
     
     st.markdown("""
     **Error Distribution Insights:**
@@ -350,55 +366,41 @@ with error_tabs[1]:
     rf_residuals = 0.5 * np.sin(temp_ranges/3) + np.random.normal(0, 0.5, 100)
     ridge_residuals = 0.7 * np.sin(temp_ranges/3) + np.random.normal(0, 0.6, 100)
     
-    # Create Plotly figure
-    fig = go.Figure()
+    # Create Matplotlib figure
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     # Add Random Forest residuals
-    fig.add_trace(go.Scatter(
-        x=temp_ranges,
-        y=rf_residuals,
-        mode='markers',
-        marker=dict(
-            size=8,
-            opacity=0.6,
-            color='#1f77b4'
-        ),
-        name='Random Forest'
-    ))
-    
-    # Add Ridge Regression residuals
-    fig.add_trace(go.Scatter(
-        x=temp_ranges,
-        y=ridge_residuals,
-        mode='markers',
-        marker=dict(
-            size=8,
-            opacity=0.6,
-            color='#ff7f0e'
-        ),
-        name='Ridge Regression'
-    ))
-    
-    # Add horizontal line at y=0
-    fig.add_hline(y=0, line_width=2, line_dash="dash", line_color="red")
-    
-    # Update layout
-    fig.update_layout(
-        title='Residuals by Temperature Range',
-        xaxis_title='Actual Temperature (°C)',
-        yaxis_title='Prediction Error (°C)',
-        template='plotly_white',
-        height=500,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
+    ax.scatter(
+        temp_ranges,
+        rf_residuals,
+        s=30,  # Reduced marker size for smaller plot
+        alpha=0.6,
+        color='#1f77b4',
+        label='Random Forest'
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Add Ridge Regression residuals
+    ax.scatter(
+        temp_ranges,
+        ridge_residuals,
+        s=30,  # Reduced marker size for smaller plot
+        alpha=0.6,
+        color='#ff7f0e',
+        label='Ridge Regression'
+    )
+    
+    # Add horizontal line at y=0
+    ax.axhline(y=0, linestyle='--', color='red', linewidth=1.5)
+    
+    # Update layout
+    ax.set_title('Residuals by Temperature Range', fontsize=12)
+    ax.set_xlabel('Actual Temperature (°C)', fontsize=10)
+    ax.set_ylabel('Prediction Error (°C)', fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
+    ax.legend(fontsize=9)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
     
     st.markdown("""
     **Residual Analysis Insights:**
@@ -444,37 +446,40 @@ st.dataframe(
     hide_index=True
 )
 
-# Create Plotly horizontal bar chart for RF feature importance
-fig = go.Figure()
+# Create Matplotlib horizontal bar chart for RF feature importance
+fig, ax = plt.subplots(figsize=(7, 4))
 
 # Sort by importance
 sorted_idx = np.argsort(rf_feature_importance['Importance'])
 sorted_features = [rf_feature_importance['Feature'][i] for i in sorted_idx]
 sorted_importance = [rf_feature_importance['Importance'][i] for i in sorted_idx]
 
-fig.add_trace(go.Bar(
-    y=sorted_features,
-    x=sorted_importance,
-    orientation='h',
-    marker=dict(
-        color=sorted_importance,
-        colorscale='GnBu',
-        colorbar=dict(title="Importance")
-    ),
-    text=[f"{v:.3f}" for v in sorted_importance],
-    textposition='auto'
-))
+# Create colormap
+cmap = plt.cm.viridis
+norm = plt.Normalize(min(sorted_importance), max(sorted_importance))
+colors = cmap(norm(sorted_importance))
+
+# Create horizontal bars
+bars = ax.barh(sorted_features, sorted_importance, color=colors)
+
+# Add text labels
+for i, bar in enumerate(bars):
+    width = bar.get_width()
+    ax.text(
+        width + 0.01,
+        bar.get_y() + bar.get_height()/2,
+        f"{sorted_importance[i]:.3f}",
+        va='center',
+        fontsize=9
+    )
 
 # Update layout
-fig.update_layout(
-    title="Random Forest Feature Importance",
-    xaxis_title="Importance Score",
-    yaxis_title="Feature",
-    template="plotly_white",
-    height=400
-)
+ax.set_title("Random Forest Feature Importance", fontsize=12)
+ax.set_xlabel("Importance Score", fontsize=10)
+ax.set_ylabel("Feature", fontsize=10)
 
-st.plotly_chart(fig, use_container_width=True)
+plt.tight_layout()
+st.pyplot(fig)
 
 st.markdown("""
 **Random Forest Feature Insights:**
@@ -514,37 +519,40 @@ st.dataframe(
     hide_index=True
 )
 
-# Create Plotly horizontal bar chart for Ridge feature importance
-fig = go.Figure()
+# Create Matplotlib horizontal bar chart for Ridge feature importance
+fig, ax = plt.subplots(figsize=(7, 4))
 
 # Sort by importance
 sorted_idx = np.argsort(ridge_feature_importance['Importance'])
 sorted_features = [ridge_feature_importance['Feature'][i] for i in sorted_idx]
 sorted_importance = [ridge_feature_importance['Importance'][i] for i in sorted_idx]
 
-fig.add_trace(go.Bar(
-    y=sorted_features,
-    x=sorted_importance,
-    orientation='h',
-    marker=dict(
-        color=sorted_importance,
-        colorscale='Oranges',
-        colorbar=dict(title="Importance")
-    ),
-    text=[f"{v:.3f}" for v in sorted_importance],
-    textposition='auto'
-))
+# Create colormap
+cmap = plt.cm.viridis
+norm = plt.Normalize(min(sorted_importance), max(sorted_importance))
+colors = cmap(norm(sorted_importance))
+
+# Create horizontal bars
+bars = ax.barh(sorted_features, sorted_importance, color=colors)
+
+# Add text labels
+for i, bar in enumerate(bars):
+    width = bar.get_width()
+    ax.text(
+        width + 0.01,
+        bar.get_y() + bar.get_height()/2,
+        f"{sorted_importance[i]:.3f}",
+        va='center',
+        fontsize=9
+    )
 
 # Update layout
-fig.update_layout(
-    title="Ridge Regression Feature Importance",
-    xaxis_title="Importance Score",
-    yaxis_title="Feature",
-    template="plotly_white",
-    height=400
-)
+ax.set_title("Ridge Regression Feature Importance", fontsize=12)
+ax.set_xlabel("Importance Score", fontsize=10)
+ax.set_ylabel("Feature", fontsize=10)
 
-st.plotly_chart(fig, use_container_width=True)
+plt.tight_layout()
+st.pyplot(fig)
 
 st.markdown("""
 **Ridge Regression Feature Insights:**

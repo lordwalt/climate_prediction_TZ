@@ -3,9 +3,9 @@ import pandas as pd
 import os
 import sys
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.patches import Patch
 
 # Add project root to Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,6 +14,12 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from EDA.data_analysis import calculate_basic_stats, analyze_seasonal_patterns, analyze_yearly_trends
+
+# Set matplotlib style
+plt.style.use('seaborn-v0_8-whitegrid')
+
+# Set base font size for better readability on smaller plots
+plt.rcParams.update({'font.size': 10})
 
 st.title("Exploratory Data Analysis")
 
@@ -56,7 +62,7 @@ try:
         hide_index=False
     )
 
-    # Temperature Distributions with Plotly
+    # Temperature Distributions with Matplotlib
     st.header("Temperature Distributions")
     st.markdown("""
     These histograms show how temperatures are distributed across the dataset:
@@ -67,45 +73,25 @@ try:
     In the context of climate change, shifts in these distributions over time can indicate changing temperature patterns.
     """)
     
-    # Create Plotly histogram for temperature distributions
-    fig = make_subplots(rows=1, cols=3, 
-                        subplot_titles=("Average Temperature", "Maximum Temperature", "Minimum Temperature"))
+    # Create Matplotlib histogram for temperature distributions
+    fig, axes = plt.subplots(1, 3, figsize=(7, 4))
     
-    # Add traces for each temperature type
-    fig.add_trace(
-        go.Histogram(x=df['TAVG'], nbinsx=30, name="Average Temp", 
-                     marker_color='rgba(73, 160, 181, 0.7)'),
-        row=1, col=1
-    )
+    # Add histograms for each temperature type
+    axes[0].hist(df['TAVG'], bins=25, alpha=0.7, color='#49a0b5')
+    axes[0].set_title("Average Temperature", fontsize=11)
+    axes[0].set_xlabel("Temperature (°C)", fontsize=10)
+    axes[0].set_ylabel("Frequency", fontsize=10)
     
-    fig.add_trace(
-        go.Histogram(x=df['TMAX'], nbinsx=30, name="Maximum Temp", 
-                     marker_color='rgba(255, 109, 0, 0.7)'),
-        row=1, col=2
-    )
+    axes[1].hist(df['TMAX'], bins=25, alpha=0.7, color='#ff6d00')
+    axes[1].set_title("Maximum Temperature", fontsize=11)
+    axes[1].set_xlabel("Temperature (°C)", fontsize=10)
     
-    fig.add_trace(
-        go.Histogram(x=df['TMIN'], nbinsx=30, name="Minimum Temp", 
-                     marker_color='rgba(50, 171, 96, 0.7)'),
-        row=1, col=3
-    )
+    axes[2].hist(df['TMIN'], bins=25, alpha=0.7, color='#32ab60')
+    axes[2].set_title("Minimum Temperature", fontsize=11)
+    axes[2].set_xlabel("Temperature (°C)", fontsize=10)
     
-    # Update layout
-    fig.update_layout(
-        height=500,
-        showlegend=False,
-        title_text="Temperature Distributions in Tanzania",
-        bargap=0.05,
-        template="plotly_white"
-    )
-    
-    # Update x and y axis titles for each subplot
-    fig.update_xaxes(title_text="Temperature (°C)", row=1, col=1)
-    fig.update_xaxes(title_text="Temperature (°C)", row=1, col=2)
-    fig.update_xaxes(title_text="Temperature (°C)", row=1, col=3)
-    fig.update_yaxes(title_text="Frequency", row=1, col=1)
-    
-    st.plotly_chart(fig, use_container_width=True)
+    plt.tight_layout()
+    st.pyplot(fig)
     
     # Seasonal Patterns
     st.header("Seasonal Temperature Patterns")
@@ -121,7 +107,7 @@ try:
     seasonal_stats = analyze_seasonal_patterns(df)
     st.dataframe(seasonal_stats, use_container_width=True)
     
-    # Seasonal Temperature Visualization with Plotly
+    # Seasonal Temperature Visualization with Matplotlib
     st.subheader("Seasonal Temperature Visualization")
     
     st.markdown("""
@@ -147,57 +133,49 @@ try:
     These changes impact agricultural planning, water resource management, and human health considerations.
     """)
     
-    # Create Plotly bar chart for seasonal patterns
+    # Create Matplotlib bar chart for seasonal patterns
     seasons = seasonal_stats.index
     means = seasonal_stats['mean']
     std = seasonal_stats['std']
     min_temps = seasonal_stats['min']
     max_temps = seasonal_stats['max']
     
-    # Create custom hover text
-    hover_text = [f"Season: {season}<br>" +
-                 f"Mean: {mean:.1f}°C<br>" +
-                 f"Std Dev: {std:.2f}°C<br>" +
-                 f"Range: {min_temp:.1f}-{max_temp:.1f}°C"
-                 for season, mean, std, min_temp, max_temp 
-                 in zip(seasons, means, std, min_temps, max_temps)]
-    
     # Create the bar chart
-    fig = go.Figure()
+    fig, ax = plt.subplots(figsize=(7, 4))
+    
+    # Define colors
+    colors = ['#49a0b5', '#32ab60', '#ff6d00', '#ffb600']
     
     # Add bars
-    fig.add_trace(go.Bar(
-        x=seasons,
-        y=means,
-        error_y=dict(type='data', array=std, visible=True),
-        hovertext=hover_text,
-        hoverinfo='text',
-        marker_color=['rgba(73, 160, 181, 0.7)', 'rgba(50, 171, 96, 0.7)', 
-                      'rgba(255, 109, 0, 0.7)', 'rgba(255, 182, 0, 0.7)']
-    ))
+    bars = ax.bar(
+        seasons,
+        means,
+        yerr=std,
+        capsize=8,
+        color=colors,
+        alpha=0.7
+    )
     
     # Add range indicators as annotations
-    for i, season in enumerate(seasons):
-        fig.add_annotation(
-            x=i,
-            y=means[i] + std[i] + 0.5,
-            text=f"Range: {min_temps[i]:.1f}-{max_temps[i]:.1f}°C",
-            showarrow=False,
-            font=dict(size=10)
+    for i, (season, mean, std_val, min_temp, max_temp) in enumerate(zip(seasons, means, std, min_temps, max_temps)):
+        ax.annotate(
+            f"Range: {min_temp:.1f}-{max_temp:.1f}°C",
+            xy=(i, mean + std_val + 0.5),
+            ha='center',
+            va='bottom',
+            fontsize=8
         )
     
     # Update layout
-    fig.update_layout(
-        title="Seasonal Temperature Patterns with Variability",
-        xaxis_title="Season",
-        yaxis_title="Temperature (°C)",
-        template="plotly_white",
-        height=600
-    )
+    ax.set_title("Seasonal Temperature Patterns with Variability", fontsize=12)
+    ax.set_xlabel("Season", fontsize=10)
+    ax.set_ylabel("Temperature (°C)", fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
     
-    st.plotly_chart(fig, use_container_width=True)
+    plt.tight_layout()
+    st.pyplot(fig)
     
-    # Yearly Trends with Plotly
+    # Yearly Trends with Matplotlib
     st.header("Yearly Temperature Trends")
     st.markdown("""
     This graph shows how average temperatures have changed over the years:
@@ -205,6 +183,11 @@ try:
     - **Downward trends** could suggest cooling patterns
     - **Flat periods** show temperature stability
     - **Variability** (ups and downs) may indicate climate oscillations like El Niño/La Niña
+
+    **Important context for interpretation:**
+    - This dataset covers approximately 30 years (1990-2022), which may be too short to identify long-term climate trends
+    - Regional factors like the Indian Ocean Dipole can create multi-decadal cooling or warming periods
+    - The slight cooling trend observed may reflect regional climate patterns and dataset limitations rather than contradicting global warming
     
     Long-term temperature trends are key indicators of climate change. Tanzania, like many regions, 
     has experienced gradual warming over recent decades, which impacts agriculture, water resources, 
@@ -215,71 +198,87 @@ try:
     yearly_stats = analyze_yearly_trends(df)
     yearly_avg = yearly_stats['mean']
     
-    # Create Plotly line chart for yearly trends
-    fig = go.Figure()
-    
-    # Add yearly average line
-    fig.add_trace(go.Scatter(
-        x=yearly_stats.index,
-        y=yearly_stats['mean'],
-        mode='lines+markers',
-        name='Yearly Average',
-        line=dict(color='rgb(31, 119, 180)', width=2),
-        marker=dict(size=6)
-    ))
-    
     # Use actual years for trend calculation
     years = np.array(yearly_stats.index.astype(int))
     z = np.polyfit(years, yearly_avg, 1)
     p = np.poly1d(z)
     trend_years = np.array(range(min(years), max(years)+1))
-    fig.add_trace(go.Scatter(
-    x=trend_years,
-    y=p(trend_years),
-    mode='lines',
-    name=f'Trend: {z[0]:.4f}°C/year',
-    line=dict(color='red', width=2, dash='dash')
-))
+
+    # Calculate confidence intervals for the trend line
+    n = len(years)
+    mean_x = np.mean(years)
+    std_err = np.sqrt(np.sum((yearly_avg - p(years))**2) / (n-2) / np.sum((years - mean_x)**2))
+    conf_interval = std_err * 1.96  # 95% confidence interval
+
+    # Create upper and lower confidence bands
+    upper_bound = p(trend_years) + conf_interval
+    lower_bound = p(trend_years) - conf_interval
+
+    # Calculate 5-year moving average
+    window_size = 5
+    if len(yearly_avg) >= window_size:
+        # Create pandas Series for rolling calculation
+        temp_series = pd.Series(yearly_avg.values, index=yearly_stats.index)
+        rolling_avg = temp_series.rolling(window=window_size, center=True).mean()
+    
+    # Create Matplotlib line chart for yearly trends
+    fig, ax = plt.subplots(figsize=(7, 4))
     
     # Add min-max range
-    fig.add_trace(go.Scatter(
-        x=yearly_stats.index,
-        y=yearly_stats['max'],
-        mode='lines',
-        name='Maximum',
-        line=dict(width=0),
-        showlegend=False
-    ))
-    
-    fig.add_trace(go.Scatter(
-        x=yearly_stats.index,
-        y=yearly_stats['min'],
-        mode='lines',
-        name='Min-Max Range',
-        line=dict(width=0),
-        fill='tonexty',
-        fillcolor='rgba(31, 119, 180, 0.2)'
-    ))
-    
-    # Update layout
-    fig.update_layout(
-        title='Yearly Temperature Trend with Min-Max Range',
-        xaxis_title='Year',
-        yaxis_title='Temperature (°C)',
-        template='plotly_white',
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        ),
-        height=600
+    ax.fill_between(
+        yearly_stats.index,
+        yearly_stats['min'],
+        yearly_stats['max'],
+        color='#1f77b4',
+        alpha=0.2,
+        label='Min-Max Range'
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Add yearly average line
+    ax.plot(
+        yearly_stats.index,
+        yearly_stats['mean'],
+        'o-',
+        color='#1f77b4',
+        linewidth=1.5,
+        markersize=6,
+        label='Yearly Average'
+    )
     
-    # Temperature Anomalies with Plotly
+    # Add trend line
+    ax.plot(
+        trend_years,
+        p(trend_years),
+        '--',
+        color='red',
+        linewidth=1.5,
+        label=f'Trend: {z[0]:.4f}°C/year'
+    )
+    
+    # Update layout
+    ax.set_title('Yearly Temperature Trend (1990-2022)', fontsize=12)
+    ax.set_xlabel('Year', fontsize=10)
+    ax.set_ylabel('Temperature (°C)', fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
+    
+    # Create custom legend with more descriptive labels
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    
+    legend_elements = [
+        Patch(facecolor='#1f77b4', alpha=0.2, label='Temperature Range (Min to Max)'),
+        Line2D([0], [0], color='#1f77b4', marker='o', linestyle='-', markersize=6, linewidth=1.5, label='Yearly Average Temp'),
+        Line2D([0], [0], color='red', linestyle='--', linewidth=1.5, label=f'Trend: {z[0]:.4f}°C/year')
+    ]
+    
+    # Position legend in the lower right to avoid overlapping with data
+    ax.legend(handles=legend_elements, loc='lower right', fontsize=9)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+
+    
+    # Temperature Anomalies with Matplotlib
     st.subheader("Temperature Anomalies")
     st.markdown("""
     Temperature anomalies show deviations from the long-term average, highlighting unusual warming or cooling periods:
@@ -296,36 +295,38 @@ try:
     # Calculate yearly anomalies
     yearly_anomalies = yearly_avg - baseline_avg
     
-    # Create Plotly bar chart for anomalies
-    colors = ['rgba(255, 65, 54, 0.7)' if x > 0 else 'rgba(31, 119, 180, 0.7)' for x in yearly_anomalies]
+    # Create Matplotlib bar chart for anomalies
+    fig, ax = plt.subplots(figsize=(7, 4))
     
-    fig = go.Figure(go.Bar(
-        x=yearly_anomalies.index,
-        y=yearly_anomalies,
-        marker_color=colors,
-        hovertemplate='Year: %{x}<br>Anomaly: %{y:.2f}°C<extra></extra>'
-    ))
+    # Create colors based on anomaly values
+    colors = ['#ff4136' if x > 0 else '#1f77b4' for x in yearly_anomalies]
+    
+    # Create bars
+    bars = ax.bar(
+        yearly_anomalies.index,
+        yearly_anomalies,
+        color=colors,
+        alpha=0.7
+    )
     
     # Add zero line
-    fig.add_shape(
-        type="line",
-        x0=min(yearly_anomalies.index),
-        y0=0,
-        x1=max(yearly_anomalies.index),
-        y1=0,
-        line=dict(color="black", width=1.5, dash="solid")
-    )
+    ax.axhline(y=0, color='black', linestyle='-', linewidth=1.5)
     
     # Update layout
-    fig.update_layout(
-        title=f'Temperature Anomalies (Baseline: {baseline_years[0]}-{baseline_years[-1]} Average)',
-        xaxis_title='Year',
-        yaxis_title='Temperature Anomaly (°C)',
-        template='plotly_white',
-        height=500
-    )
+    ax.set_title(f'Temperature Anomalies (Baseline: {baseline_years[0]}-{baseline_years[-1]} Average)', fontsize=12)
+    ax.set_xlabel('Year', fontsize=10)
+    ax.set_ylabel('Temperature Anomaly (°C)', fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Add legend
+    legend_elements = [
+        Patch(facecolor='#ff4136', alpha=0.7, label='Warmer than baseline'),
+        Patch(facecolor='#1f77b4', alpha=0.7, label='Cooler than baseline')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=9)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
     
     # Add climate impact section
     st.header("Climate Implications")
